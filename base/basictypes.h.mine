@@ -1,0 +1,53 @@
+// Copyright 2011 Ashkan Kiani
+
+#ifndef BASICTYPES_H_
+#define BASICTYPES_H_
+
+#include <cstring> // memcpy
+#include <cstddef> // size_t
+
+#include "build_config.h"
+
+// Should I add signed for all?
+typedef signed char schar;
+typedef signed char int8;
+typedef unsigned char uint8;
+typedef unsigned char byte;
+typedef short int16;
+typedef unsigned short uint16;
+// Is int guaranteed to be 32 bit?
+typedef int int32;
+typedef unsigned int uint32;
+#if __LP64__
+typedef long int64;
+typedef unsigned long uint64;
+#else
+typedef long long int64;
+typedef unsigned long long uint64;
+#endif
+typedef __int128 int128;
+typedef unsigned __int128 uint128;
+// typedef unsigned __int256 uint256;
+// typedef signed __int256 int256;
+
+typedef float float32;
+typedef double float64;
+#ifdef OS_WIN
+typedef double float128;
+#else
+typedef long double float128;
+#endif
+
+template<class To, class From>
+inline To bit_cast(const From& from) {
+  // static_assert(sizeof(From) == sizeof(To), "Incompatible bit cast sizes");
+  To to;
+  memcpy(&to, &from, sizeof(from));
+  return to;
+}
+
+inline bool in_range(int num, int lower, int upper) {
+  return static_cast<unsigned int>(num - lower) < (upper - lower);
+}
+
+#endif // BASICTYPES_H_
