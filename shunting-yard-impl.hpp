@@ -73,31 +73,31 @@ static int GetOperator(const char*& str) {
   return *str++;
 }
 
-template<class T>
-ShuntingYard<T>::ShuntingYard(ReversePolish<T>& calculator)
+template<class T, class S, class F>
+ShuntingYard<T, S, F>::ShuntingYard(ReversePolish<T>& calculator)
     : calculator_(calculator) { }
 
-template<class T>
-ShuntingYard<T>::ShuntingYard(ReversePolish<T>& calculator,
+template<class T, class S, class F>
+ShuntingYard<T, S, F>::ShuntingYard(ReversePolish<T>& calculator,
   std::shared_ptr<symbol_map> symbols,
   std::shared_ptr<function_map> functions)
     : calculator_(calculator), symbols_(symbols), functions_(functions) { }
 
-template <class T>
-void ShuntingYard<T>::SetCalculator(ReversePolish<T> &calculator) {
+template<class T, class S, class F>
+void ShuntingYard<T, S, F>::SetCalculator(ReversePolish<T> &calculator) {
   calculator_ = calculator;
 }
-template <class T>
-void ShuntingYard<T>::SetFunctionMap(std::shared_ptr<function_map> map) {
+template<class T, class S, class F>
+void ShuntingYard<T, S, F>::SetFunctionMap(std::shared_ptr<function_map> map) {
   functions_ = map;
 }
-template <class T>
-void ShuntingYard<T>::SetSymbolMap(std::shared_ptr<symbol_map> map) {
+template<class T, class S, class F>
+void ShuntingYard<T, S, F>::SetSymbolMap(std::shared_ptr<symbol_map> map) {
   symbols_ = map;
 }
 
-template<class T>
-void ShuntingYard<T>::CloseParenthesis() {
+template<class T, class S, class F>
+void ShuntingYard<T, S, F>::CloseParenthesis() {
   // template<class T, class RPNHandler>
   // void ShuntingYard<T, RPNHandler>::CloseParenthesis() {
   while (!operators_.empty() && *operators_.top()->name != '(') {
@@ -127,14 +127,14 @@ void ShuntingYard<T>::CloseParenthesis() {
   // PerformFunction(operators_.top());
 }
 
-template<class T>
-inline void ShuntingYard<T>::PopOperator() {
+template<class T, class S, class F>
+inline void ShuntingYard<T, S, F>::PopOperator() {
   calculator_.HandleOperator(operators_.top());
   operators_.pop();
 }
 
-template<class T>
-void ShuntingYard<T>::FunctionArgumentSeparator() {
+template<class T, class S, class F>
+void ShuntingYard<T, S, F>::FunctionArgumentSeparator() {
   while (!operators_.empty() && *operators_.top()->name != '(') {
     // Should this be `HandleOperator` or `ProcessOperator`.
     PopOperator();
@@ -145,9 +145,9 @@ void ShuntingYard<T>::FunctionArgumentSeparator() {
     throw "Misplaced parenthesis or function argument separator.";
 }
 
-template<class T>
+template<class T, class S, class F>
 // void ShuntingYard<T>::ProcessOperator(int operation) {
-void ShuntingYard<T>::ProcessOperator(Operator* operation) {
+void ShuntingYard<T, S, F>::ProcessOperator(Operator* operation) {
   // template<class T, class RPNHandler>
   // void ShuntingYard<T, RPNHandler>::ProcessOperator(int operation) {
 
@@ -182,8 +182,8 @@ class State {
   // Token previous_;
 };
 
-template<class T>
-T ShuntingYard<T>::Parse(Iterator& str, Iterator end) {
+template<class T, class S, class F>
+T ShuntingYard<T, S, F>::Parse(Iterator& str, Iterator end) {
   // template<class T, class RPNHandler>
   // T ShuntingYard<T, RPNHandler>::Parse(const char* str, const char* end) {
   State state;
@@ -222,9 +222,9 @@ T ShuntingYard<T>::Parse(Iterator& str, Iterator end) {
           //     UnGreedyFind(functions_, str, string::StreamCompare);
 
           // StreamMap<const char*, int>::iterator idx = functions_->Find(str);
-          StreamMap<const char*, Operator>::iterator idx = functions_->Find(str);
+          typename function_map::iterator idx = functions_->Find(str);
           if (idx != functions_->end()) {
-            dprintf("Function(%s)", idx->first);
+            dprintf("Function(%s)", idx->first.c_str());
             if (!idx->second.is_operator && state.ImplicitMultiplication()) {
               dprintf(" with Implicit Multiplication\n");
               ProcessOperator(&functions_->at("*"));
@@ -242,7 +242,7 @@ T ShuntingYard<T>::Parse(Iterator& str, Iterator end) {
           // std::map<const char*, double>::iterator idx =
           //     UnGreedyFind(symbols_, str, string::StreamCaseCompare);
           // StreamMap<const char*, base_type, StreamCaseCompare>::iterator idx = symbols_->Find(str);
-          symbol_map::iterator idx = symbols_->Find(str);
+          typename symbol_map::iterator idx = symbols_->Find(str);
           if (idx != symbols_->end()) {
             // dprintf("Constant(%s=%.15g)", idx->first, idx->second);
             dexec(std::cout << "Constant(" << idx->first << "=" << idx->second << ")");
@@ -257,8 +257,8 @@ T ShuntingYard<T>::Parse(Iterator& str, Iterator end) {
             break;
           }
         }
-        // throw UnknownAlpha
-        throw std::string("Unrecognized alphanumeric symbol: ") + str;
+        throw UnknownAlpha(str);
+        // throw std::string("Unrecognized alphanumeric symbol: ") + str;
       } break;
       case kLeftParenthesis:
         dprintf("LeftParenthesis");
@@ -281,7 +281,7 @@ T ShuntingYard<T>::Parse(Iterator& str, Iterator end) {
         dprintf("Operator(%c)\n", *op);
         if (*op == '-' && state.Negate())
           *op = '_';
-        std::map<const char*, Operator, StreamCompare>::iterator it = functions_->find(op);
+        typename function_map::iterator it = functions_->find(op);
         if (it == functions_->end())
           throw BadOperator();
         ProcessOperator(&it->second);

@@ -28,8 +28,8 @@ typedef unsigned char uint8;
 // };
 
 struct ParseException {
-  ParseException(const char* wat) : what(wat) {}
-  const char* const what;
+  ParseException(const std::string& wat) : what(wat) {}
+  const std::string what;
 };
 
 struct NoParam : ParseException {
@@ -81,7 +81,7 @@ template<class T>
 class DefaultRPN : public ReversePolish<T> {
  public:
   void HandleValue(const base_type& value);
-  void HandleConstant(const char* name, const base_type& value);
+  // void HandleConstant(const char* name, const base_type& value);
   void HandleConstant(const std::string& name, const base_type& value);
 
  // private:

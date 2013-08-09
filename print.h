@@ -99,7 +99,7 @@ std::ostream& operator<<(std::ostream& stream, const std::unordered_map<K, V>& m
 
 template<class K, class V, class C>
 std::ostream& operator<<(std::ostream& stream, const std::map<K, V, C>& map) {
-  int n = map.size();
+  long n = map.size();
   stream << '{';
   for (const auto& pair : map) {
     stream << pair.first << ": " << pair.second;

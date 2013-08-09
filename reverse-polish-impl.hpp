@@ -72,7 +72,7 @@ void ReversePolish<T>::HandleOperator(Operator* operation) {
   typename Operations<T>::Nary* nary = op.function;
   // TODO: Todo, should this be T*?
   std::vector<T> arguments(op.argument_count);
-  for (int i = arguments.size() - 1; i >= 0; --i) {
+  for (long i = arguments.size() - 1; i >= 0; --i) {
     arguments[i] = PopValue();
   }
   PushValue(nary(arguments));

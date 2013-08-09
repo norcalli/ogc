@@ -385,7 +385,7 @@ std::ostream& operator<<(std::ostream& stream, const Units<T>& unit) {
     if (dim.mass) {
       // if (dim.mass == -1)
       //   stream << "/ ";
-      stream << "kilogram";
+      stream << "gram";
       // if (dim.mass != 1 && dim.mass != -1)
       if (dim.mass != 1)
         stream << '^' << (int)dim.mass;

@@ -25,9 +25,9 @@ struct NotEnoughParams : ParseException {
 };
 
 struct UnknownAlpha : ParseException {
-  const char* token;
-  UnknownAlpha(const char* alpha)
-  : token(alpha), ParseException((std::string("Unrecognized alphanumeric symbol: '") + token + '\'').c_str()) {}
+  std::string token;
+  UnknownAlpha(const std::string& alpha)
+  : token(alpha), ParseException(std::string("Unrecognized alphanumeric symbol: '") + alpha + '\'') {}
 };
 
 #if defined(OS_WIN)
@@ -42,15 +42,19 @@ struct UnknownAlpha : ParseException {
 #define DEBUGOUT
 #endif
 
-template<class T>
+template<class T,
+ class SymbolMap=StreamMap<std::string, base_type>,
+ class FunctionMap=StreamMap<std::string, Operator>>
 // template<class T, class RPNHandler = ReversePolish<T> >
 class ShuntingYard {
  public:
   typedef std::stack<Operator*> operator_stack;
-  typedef StreamMap<const char*, Operator> function_map;
+  // typedef StreamMap<const char*, Operator> function_map;
+  typedef FunctionMap function_map;
   // TODO: I can choose whether or not I want case handled here. I should be able to add functionality that chooses case by case whether or not to use case sensitivity, but do I need it?
   // typedef StreamMap<const char*, base_type, StreamCaseCompare> symbol_map;
-  typedef StreamMap<std::string, base_type, StreamCaseCompare> symbol_map;
+  // typedef StreamMap<std::string, base_type, StreamCaseCompare> symbol_map;
+  typedef SymbolMap symbol_map;
   // typedef StreamMap<const char*, base_type> symbol_map;
   typedef T type;
   typedef const char* Iterator;
@@ -61,28 +65,10 @@ class ShuntingYard {
    std::shared_ptr<function_map> functions);
   
   void SetCalculator(ReversePolish<T>& calculator);
-  // void SetSymbolMap(symbol_map& map);
-  // void SetFunctionMap(function_map& map);
   void SetSymbolMap(std::shared_ptr<symbol_map> map);
   void SetFunctionMap(std::shared_ptr<function_map> map);
 
   type Parse(Iterator& start, Iterator end = NULL);
-
-//  // inline MapWrap<const char*, base_type> AddSymbol(const char* key, const base_type& val) {
-//  //   return MapWrap<const char*, base_type>(symbols_)(key, val);
-//  // inline MapWrap<const char*, base_type, StreamCaseCompare> AddSymbol(const char* key, const base_type& val) {
-//    // return MapWrap<const char*, base_type, StreamCaseCompare>(symbols_)(key, val);
-//  inline MapWrap<symbol_map> AddSymbol(const char* key, const base_type& val) {
-//    return WrapMap(symbols_)(key, val);
-//  // inline MapWrap<const char*, type, StreamCaseCompare> AddSymbol(const char* key, const type& val) {
-//  //   return MapWrap<const char*, type, StreamCaseCompare>(symbols_)(key, val);
-//  }
-//
-//  // inline MapWrap<const char*, Operator, StreamCompare> AddFunction(const char* key, Operator val) {
-//  //   return MapWrap<const char*, Operator, StreamCompare>(functions_)(key, val);
-//  inline MapWrap<function_map> AddFunction(const char* key, Operator val) {
-//    return WrapMap(functions_)(key, val);
-//  }
 
   void Print() {
     printf("Symbols[%lu]:\n", symbols_->size());
@@ -107,20 +93,14 @@ class ShuntingYard {
     fprintf(stderr, "State:\t\t\tOperators.Top(");
     if (!operators_.empty())
       fprintf(stderr, "%s", operators_.top()->name);
-    //   if (operators_.top() >= 0x100)
-    //     fprintf(stderr, "%d", operators_.top());
-    //   else
-    //     fprintf(stderr, "%c", (char)operators_.top());
     fprintf(stderr, ");\tCalculator.Top(");
     if (!calculator_.empty())
-      // fprintf(stderr, "%.15g", calculator_.top());
       std::cerr << calculator_.top();
     fputs(")\n", stderr);
   }
  private:
   void CloseParenthesis();
   void FunctionArgumentSeparator();
-  // void ProcessOperator(int operation);
   void ProcessOperator(Operator* operation);
   void PopOperator();
 

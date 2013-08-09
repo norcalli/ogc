@@ -48,11 +48,35 @@ inline bool IsEven(const T& t) {
 
 template<class T, class Iterator>
 inline T ParseUInt(Iterator& str) {
-  T result = 0;
-  while (IsDigit(*str)) {
+  // // char c;
+  // while (IsDigit(*str)) {
+  // // while (IsDigit(c = *str)) {
+  //   // result += c - '0';
+  //   result += *str - '0';
+  //   result *= 10;
+  //   ++str;
+  // }
+
+  // T result = 0;
+  // unsigned char d = *str - '0';
+  // while (d <= 9) {
+  //   // result *= 10;
+  //   result += d;
+  //   result *= 10;
+  //   d = *++str - '0';
+  // }
+  // return result/10;
+  // // return result;
+
+  unsigned char d = *str - '0';
+  if (d > 9)
+    return 0;
+  T result = d;
+  d = *++str - '0';
+  while (d <= 9) {
     result *= 10;
-    result += *str - '0';
-    ++str;
+    result += d;
+    d = *++str - '0';
   }
   return result;
 }
@@ -75,15 +99,16 @@ inline T ExtractInt(Iterator str) {
 }
 
 template<class T, class Iterator>
-inline T ParseUFloat(Iterator& str) {
-  // TODO: Should I use int or T?
-  T result = ParseUInt<T>(str);
+inline T ParseDecimal(Iterator& str, const T& result) {
+  if ((*str | 0x20) == 'e')
+    return result * ipow<T>(10, ParseInt<int>(++str));
   if (*str != '.')
     return result;
   ++str;
   // TODO: Find a better way to do this.
   T decimal_part = 1;
   T ival = 0;
+  // TODO: Try doing the offsetting at the end using ipow.
   while (*str == '0') {
     decimal_part /= static_cast<T>(10);
     ++str;
@@ -97,6 +122,37 @@ inline T ParseUFloat(Iterator& str) {
   if ((*str | 0x20) == 'e')
     return (result + decimal_part * ival) * ipow<T>(10, ParseInt<int>(++str));
   return result + decimal_part * ival;
+}
+
+template<class T, class Iterator>
+inline T ExtractDecimal(Iterator str, const T& result) {
+  return ParseDecimal<T>(str, result);
+}
+
+template<class T, class Iterator>
+inline T ParseUFloat(Iterator& str) {
+  // TODO: Should I use int or T?
+  T result = ParseUInt<T>(str);
+  return ParseDecimal<T>(str, result);
+  // if (*str != '.')
+  //   return result;
+  // ++str;
+  // // TODO: Find a better way to do this.
+  // T decimal_part = 1;
+  // T ival = 0;
+  // while (*str == '0') {
+  //   decimal_part /= static_cast<T>(10);
+  //   ++str;
+  // }
+  // while (IsDigit(*str)) {
+  //   decimal_part /= static_cast<T>(10);
+  //   ival *= static_cast<T>(10);
+  //   ival += *str - '0';
+  //   ++str;
+  // }
+  // if ((*str | 0x20) == 'e')
+  //   return (result + decimal_part * ival) * ipow<T>(10, ParseInt<int>(++str));
+  // return result + decimal_part * ival;
 }
 
 template<class T, class Iterator>
