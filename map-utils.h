@@ -56,6 +56,9 @@ template<class Key, class T, class Compare = StreamCompare,
          class Allocator = std::allocator<std::pair<const Key,T> > >
 class StreamMap : public std::map<Key, T, Compare, Allocator> {
  public:
+  typedef std::map<Key, T, Compare, Allocator> map_type;
+//  typedef map_type::iterator iterator;
+//  typedef map_type::const_iterator const_iterator;
   // T* Find(const Key& stream) {
   //   typedef typename std::map<Key, T, Compare, Allocator>::iterator Iterator;
   //   std::pair<Iterator, Iterator> pair = this->equal_range(stream);
@@ -146,10 +149,12 @@ template<class Map>
 struct MapWrap {
   // typedef std::map<Key, T, Compare, Allocator> type;
   typedef Map type;
+  typedef typename Map::mapped_type mapped_type;
+  
   MapWrap(type& m) : map(m) {}
-  // MapWrap<Key, T, Compare, Allocator>& operator() (const Key& key, const T& value) {
-  template<class Key, class T>
-  MapWrap<Map>& operator() (const Key& key, const T& value) {
+  
+  template<class Key>
+  MapWrap<Map>& operator() (const Key& key, const mapped_type& value) {
     map[key] = value;
     return *this;
   }

@@ -27,7 +27,7 @@ class blind_ptr {
 template<class T>
 inline T modulo(const T& a, const T& b) {
   // return a % b;
-  return a - floor(a/b)*b;
+  return a - std::floor(a/b)*b;
 }
 
 template<>
@@ -55,38 +55,45 @@ struct Operator {
 
 template<class T>
 struct Operations {
-  using type   = T;
-  using Unary  = T(const T&);
-  using Binary = T(const T&, const T&);
-  using Nary   = T(const std::vector<T>&);
-  // using Unary  = T (*)(const T&);
-  // using Binary = T (*)(const T&, const T&);
+  using type        = T;
+  using arg_type    = const T&;
+  // using arg_type    = T;
+  // using Unary       = T(arg_type);
+  // using Binary      = T(arg_type, arg_type);
+  // using Nary        = T(const std::vector<T>&);
+  using Unary       = std::function<T(arg_type)>;
+  using Binary      = std::function<T(arg_type, arg_type)>;
+  using Nary        = std::function<T(const std::vector<T>&)>;
+  // using Unary  = T (*)(arg_type);
+  // using Binary = T (*)(arg_type, arg_type);
   // using Nary   = T (*)(const std::vector<T>&);
 
   // typedef T type;
-  // typedef T (*Unary)(const T&);
-  // typedef T (*Binary)(const T&, const T&);
+  // typedef T (*Unary)(arg_type);
+  // typedef T (*Binary)(arg_type, arg_type);
   // typedef T (*Nary)(const std::vector<T>&);
 
-  inline static T negate(const T& a) { return -a; }
-  inline static T plus(const T& a, const T& b) { return a + b; }
-  inline static T minus(const T& a, const T& b) { return a - b; }
-  inline static T multiply(const T& a, const T& b) { return a * b; }
-  inline static T divide(const T& a, const T& b) { return a / b; }
-  inline static T modulo(const T& a, const T& b) { return modulo(a, b); }
-  inline static T pow(const T& a, const T& b) { return std::pow(a, b); }
+  inline static T floor(arg_type a) { return std::floor(a); }
+  inline static T ceil(arg_type a) { return std::floor(a); }
+  inline static T negate(arg_type a) { return -a; }
+  inline static T plus(arg_type a, arg_type b) { return a + b; }
+  inline static T minus(arg_type a, arg_type b) { return a - b; }
+  inline static T multiply(arg_type a, arg_type b) { return a * b; }
+  inline static T divide(arg_type a, arg_type b) { return a / b; }
+  inline static T modulo(arg_type a, arg_type b) { return modulo(a, b); }
+  inline static T pow(arg_type a, arg_type b) { return std::pow(a, b); }
 
-  inline static T sin(const T& a) { return std::sin(a); }
-  inline static T cos(const T& a) { return std::cos(a); }
-  inline static T tan(const T& a) { return std::tan(a); }
-  inline static T asin(const T& a) { return std::asin(a); }
-  inline static T acos(const T& a) { return std::acos(a); }
-  inline static T atan(const T& a) { return std::atan(a); }
-  inline static T exp(const T& a) { return std::exp(a); }
-  inline static T log(const T& a) { return std::log(a); }
-  inline static T log10(const T& a) { return std::log10(a); }
-  inline static T log2(const T& a) { return ::log2(a); }
-  inline static T sqrt(const T& a) { return std::sqrt(a); }
+  inline static T sin(arg_type a) { return std::sin(a); }
+  inline static T cos(arg_type a) { return std::cos(a); }
+  inline static T tan(arg_type a) { return std::tan(a); }
+  inline static T asin(arg_type a) { return std::asin(a); }
+  inline static T acos(arg_type a) { return std::acos(a); }
+  inline static T atan(arg_type a) { return std::atan(a); }
+  inline static T exp(arg_type a) { return std::exp(a); }
+  inline static T log(arg_type a) { return std::log(a); }
+  inline static T log10(arg_type a) { return std::log10(a); }
+  inline static T log2(arg_type a) { return ::log2(a); }
+  inline static T sqrt(arg_type a) { return std::sqrt(a); }
   // inline static T nCr(const T& a, const T& b) { return combination(a, b); }
 };
 

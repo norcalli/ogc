@@ -118,6 +118,22 @@ Units<T> sqrt(const Units<T>& val) {
   return Units<T>(std::sqrt(val.value), dim);
 }
 
+
+// TODO: Can you call floor on a non dimensionless? I think so...
+template<class T>
+Units<T> floor(const Units<T>& val) {
+  // if (!val.dimensions.DimensionLess())
+  //   throw std::runtime_error("Applying floor to non-dimensionless value");
+  return Units<T>(std::floor(val.value), val.dimensions);
+}
+
+template<class T>
+Units<T> ceil(const Units<T>& val) {
+  // if (!val.dimensions.DimensionLess())
+  //   throw std::runtime_error("Applying ceil to non-dimensionless value");
+  return Units<T>(std::ceil(val.value), val.dimensions);
+}
+
 template<class T>
 Units<T> exp(const Units<T>& val) {
   if (!val.dimensions.DimensionLess())
@@ -131,6 +147,7 @@ Units<T> log10(const Units<T>& val) {
     throw std::runtime_error("Applying log10 to non-dimensionless value");
   return Units<T>(std::log10(val.value), val.dimensions);
 }
+
 template<class T>
 Units<T> log(const Units<T>& val) {
   if (!val.dimensions.DimensionLess())
@@ -160,6 +177,27 @@ Units<T> tan(const Units<T>& val) {
 }
 
 template<class T>
+Units<T> atan(const Units<T>& val) {
+  if (!val.dimensions.DimensionLess())
+    throw std::runtime_error("Applying atan to non-dimensionless value");
+  return Units<T>(std::atan(val.value), val.dimensions);
+}
+
+template<class T>
+Units<T> acos(const Units<T>& val) {
+  if (!val.dimensions.DimensionLess())
+    throw std::runtime_error("Applying acos to non-dimensionless value");
+  return Units<T>(std::acos(val.value), val.dimensions);
+}
+
+template<class T>
+Units<T> asin(const Units<T>& val) {
+  if (!val.dimensions.DimensionLess())
+    throw std::runtime_error("Applying asin to non-dimensionless value");
+  return Units<T>(std::asin(val.value), val.dimensions);
+}
+
+template<class T>
 Units<T> tanh(const Units<T>& val) {
   if (!val.dimensions.DimensionLess())
     throw std::runtime_error("Applying tanh to non-dimensionless value");
@@ -181,5 +219,19 @@ Units<T> cosh(const Units<T>& val) {
 }
 
 }  // std
+
+// TODO: I could just make it call log10() and scale by log2, but iono.
+template<class T>
+Units<T> log2(const Units<T>& val) {
+  const static double log10_2 = std::log10(2);
+  if (!val.dimensions.DimensionLess())
+    throw std::runtime_error("Applying log2 to non-dimensionless value");
+  if (val.value.imag() != 0)
+    // throw std::runtime_error("Applying log2 to a complex value.")
+    return Units<T>(::log2(val.value.real()), val.dimensions);
+  else
+    return std::log10(val) / log10_2;
+}
+
 
 #endif  // __UNIT_FUNCTIONS_H__

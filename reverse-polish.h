@@ -5,27 +5,15 @@
 #include <cmath>
 // TODO: Delete after debuggin.
 #include <string>
+#include <cstdint>
 #include "calc-utils.h"
 #include "operator.h"
 #include "debug-out.h"
 
-typedef unsigned char uint8;
-
-// typedef double base_type;
-// typedef std::complex<double> base_type;
+// typedef unsigned char uint8;
 
 // // TODO: Should I have this or just for testing?
 // enum Funcs { kNeg = 200 };
-
-// struct ParseException {
-//   // ParseException(int code, const char* what) : what_(what), code_(code) {}
-//   ParseException(const char* what) : what_(what) {}
-//   // int code() { return code_; }
-//   const char* what() { return what_; }
-//  private:
-//   // int code_;
-//   const char* what_;
-// };
 
 struct ParseException {
   ParseException(const std::string& wat) : what(wat) {}
@@ -44,50 +32,51 @@ struct WTFHappened : ParseException {
   WTFHappened() : ParseException("I don't know what happened.") {}
 };
 
-template<class T>
+template <class Symbol, class Result = Symbol>
 class ReversePolish {
  public:
-  typedef T type;
+  typedef Symbol symbol_type;
+  typedef Result result_type;
 
-  virtual void HandleValue(const base_type& value) = 0;
-  // virtual void HandleConstant(const char* name, const base_type& value) = 0;
-  virtual void HandleConstant(const std::string& name, const base_type& value) = 0;
-  // virtual void HandleValue(const base_type& value);
-  // virtual void HandleConstant(const char* name, const base_type& value);
-  virtual void HandleParenthesis() { }
+  virtual void HandleValue(double value) = 0;
+
+  virtual void HandleConstant(const std::string& name,
+                              const symbol_type& value) = 0;
+
+  virtual void HandleParenthesis() {}
+
   void HandleOperator(Operator* operation);
-  const T& GetValue() const;
 
-  void Clear() {
-    std::stack<T>().swap(values_);
-  }
+  const result_type& GetValue() const;
 
-  #ifdef DEBUG
+  void Clear() { std::stack<result_type>().swap(values_); }
+
+#ifdef DEBUG
   bool empty() { return values_.empty(); }
-  T top() { return values_.top(); }
-  #endif
+  result_type top() { return values_.top(); }
+#endif
 
  protected:
-  void PushValue(const T& value);
-  // void PopValue(T* value);
-  // T& PopValue();
-  T PopValue();
+  void PushValue(const result_type& value);
+  result_type PopValue();
 
  private:
-  std::stack<T> values_;
+  std::stack<result_type> values_;
 };
 
-template<class T>
-class DefaultRPN : public ReversePolish<T> {
+template <class Symbol, class Result = Symbol>
+class DefaultRPN : public ReversePolish<Symbol, Result> {
  public:
-  void HandleValue(const base_type& value);
-  // void HandleConstant(const char* name, const base_type& value);
-  void HandleConstant(const std::string& name, const base_type& value);
+  typedef typename ReversePolish<Symbol, Result>::symbol_type symbol_type;
+  typedef typename ReversePolish<Symbol, Result>::result_type result_type;
 
- // private:
- //  T BinaryOperator(int operation, const T& left, const T& right);
- //  T UnaryOperator(int operation, const T& value);
- //  T FunctionOperator(int operation);
+  void HandleValue(double value);
+  void HandleConstant(const std::string& name, const symbol_type& value);
+
+  // private:
+  //  T BinaryOperator(int operation, const T& left, const T& right);
+  //  T UnaryOperator(int operation, const T& value);
+  //  T FunctionOperator(int operation);
 };
 
 #include "reverse-polish-impl.hpp"

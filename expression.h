@@ -394,6 +394,7 @@ struct Operations<Expression<Units<T> >*> {
   inline static type minus(type a, type b) { return new MinusExpr<base>(a, b); }
   inline static type multiply(type a, type b) { return new MultExpr<base>(a, b); }
   inline static type divide(type a, type b) { return new DivExpr<base>(a, b); }
+  // inline static type floor(type a) { return new NegateExpr<base>(a); }
   inline static type negate(type a) { return new NegateExpr<base>(a); }
   inline static type modulo(type a, type b) { return new ModuloExpr<base>(a, b); }
   inline static type pow(type a, type b) { return new PowExpr<base>(a, b); }
