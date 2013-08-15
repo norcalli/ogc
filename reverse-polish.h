@@ -45,7 +45,7 @@ class ReversePolish {
 
   virtual void HandleParenthesis() {}
 
-  void HandleOperator(Operator* operation);
+  void HandleOperator(const Operator* operation);
 
   const result_type& GetValue() const;
 

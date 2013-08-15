@@ -155,7 +155,8 @@ struct MapWrap {
   
   template<class Key>
   MapWrap<Map>& operator() (const Key& key, const mapped_type& value) {
-    map[key] = value;
+//    map[key] = value;
+    map.insert(typename Map::value_type(key, value));
     return *this;
   }
 

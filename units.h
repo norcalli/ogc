@@ -48,6 +48,10 @@ template<class T>
 struct Units {
   typedef T value_type;
 
+  inline bool DimensionLess() const {
+    return value == T(0) || dimensions.DimensionLess();
+  }
+
   Units() {
     dimensions.charge = 0;
     dimensions.mass = 0;
@@ -288,10 +292,10 @@ template<class T>
 Units<T> operator/(const T& lhs, const Units<T>& rhs) {
   Units<T> temp;
   temp.value = lhs / rhs.value;
-  temp.charge = -rhs.charge;
-  temp.mass = -rhs.mass;
-  temp.time = -rhs.time;
-  temp.length = -rhs.length;
+  temp.dimensions.charge = -rhs.dimensions.charge;
+  temp.dimensions.mass = -rhs.dimensions.mass;
+  temp.dimensions.time = -rhs.dimensions.time;
+  temp.dimensions.length = -rhs.dimensions.length;
   return temp;
 }
 
@@ -310,16 +314,16 @@ Units<T> operator/(const Units<T>& lhs, const int& rhs) {
   return lhs / (T)rhs;
 }
 
-template<class T>
-Units<T> operator/(const int& lhs, const Units<T>& rhs) {
-  Units<T> temp;
-  temp.value = lhs / rhs.value;
-  temp.charge = -rhs.charge;
-  temp.mass = -rhs.mass;
-  temp.time = -rhs.time;
-  temp.length = -rhs.length;
-  return temp;
-}
+// template<class T>
+// Units<T> operator/(const int& lhs, const Units<T>& rhs) {
+//   Units<T> temp;
+//   temp.value = lhs / rhs.value;
+//   temp.dimensions.charge = -rhs.dimensions.charge;
+//   temp.dimensions.mass = -rhs.dimensions.mass;
+//   temp.dimensions.time = -rhs.dimensions.time;
+//   temp.dimensions.length = -rhs.dimensions.length;
+//   return temp;
+// }
 
 template<class T>
 Units<T> operator*(const Units<T>& lhs, const double& rhs) {
@@ -340,10 +344,10 @@ template<class T>
 Units<T> operator/(const double& lhs, const Units<T>& rhs) {
   Units<T> temp;
   temp.value = lhs / rhs.value;
-  temp.charge = -rhs.charge;
-  temp.mass = -rhs.mass;
-  temp.time = -rhs.time;
-  temp.length = -rhs.length;
+  temp.dimensions.charge = -rhs.dimensions.charge;
+  temp.dimensions.mass = -rhs.dimensions.mass;
+  temp.dimensions.time = -rhs.dimensions.time;
+  temp.dimensions.length = -rhs.dimensions.length;
   return temp;
 }
 

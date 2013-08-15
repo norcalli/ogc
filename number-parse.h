@@ -12,7 +12,8 @@ inline void ipow(T base, int exp, T* result) {
       exp >>= 1;
       base *= base;
     }
-    *result = 1/ *result;
+//    *result = 1/ *result;
+    *result = T(1.0)/ *result;
   } else {
     while (exp) {
       if (exp & 1)

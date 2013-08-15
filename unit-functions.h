@@ -1,6 +1,8 @@
 #ifndef __UNIT_FUNCTIONS_H__
 #define __UNIT_FUNCTIONS_H__
 
+#include "number-utilities.h"
+#include "number-parse.h"
 #include "units.h"
 #include <cmath>
 #include <complex>
@@ -47,27 +49,98 @@ inline bool is_int(const std::complex<double>& value) {
   return abs(value - round(value)) < 1e-14;
 }
 
+// template<class T>
+// Units<std::complex<T> > pow(const std::complex<T>& x, int y) {
+//   if (x.value.imag() == 0)
+//     // return ipow(x.value.real(), y);
+//     return pow(x.value.real(), y);
+//   // return ipow(x.value, y);
+//   return pow(x.value, y);
+// }
+
+// template<class T>
+// Units<std::complex<T> > pow(const std::complex<T>& x, double y) {
+//   if (x.value.imag() == 0)
+//     // return ipow(x.value.real(), y);
+//     return pow(x.value.real(), y);
+//   // return ipow(x.value, y);
+//   return pow(x.value, y);
+// }
+
 template<class T>
-Units<std::complex<T> > pow(const Units<std::complex<T> >& x, const Units<std::complex<T> >& y) {
-  if (!y.dimensions.DimensionLess())
-    throw std::runtime_error("Applying pow to non-dimensionless exponent");
-  if (!x.dimensions.DimensionLess() && y.value.imag() != 0)
-    throw std::runtime_error("Applying imaginary power to dimensional base");
+Units<std::complex<T> > pow(const Units<std::complex<T>>& x, int y) {
   Dimensions dim = x.dimensions;
-  T charge = dim.charge * y.value.real();
-  T mass = dim.mass * y.value.real();
-  T time = dim.time * y.value.real();
-  T length = dim.length * y.value.real();
-  if (is_int(charge) && is_int(mass) && is_int(time) && is_int(length)) {
+  dim.charge *= y;
+  dim.mass *= y;
+  dim.time *= y;
+  dim.length *= y;
+  return {pow(x.value, y), dim};
+}
+
+template<class T>
+Units<std::complex<T> > pow(const Units<std::complex<T>>& x, double y) {
+  if (representable(y))
+    return pow(x, int(y));
+  Dimensions dim = x.dimensions;
+  T charge = dim.charge * y;
+  T mass = dim.mass * y;
+  T time = dim.time * y;
+  T length = dim.length * y;
+  if (representable(charge) && representable(mass)
+      && representable(time) && representable(length)) {
     dim.charge = static_cast<Dimensions::value>(charge);
     dim.mass = static_cast<Dimensions::value>(mass);
     dim.time = static_cast<Dimensions::value>(time);
     dim.length = static_cast<Dimensions::value>(length);
-  } else {
-    throw std::runtime_error("Pow results in non-integer units.");
   }
+  return {pow(x.value, y), dim};
+}
 
-  return Units<std::complex<T> >(std::pow(x.value, y.value), dim);
+// template<class T>
+// Units<std::complex<T> > pow(const std::complex<T>& x, const std::complex<T>& y) {
+//   if (y.imag() == 0)
+//     return pow(x, y.real());
+//   return exp(y*log(x));
+// }
+
+template<class T>
+Units<std::complex<T> > pow(const Units<std::complex<T>>& x, const std::complex<T>& y) {
+  if (y.imag() == 0)
+    return pow(x, y.real());
+  if (!x.DimensionLess())
+    throw std::runtime_error("Applying imaginary power to dimensional base");
+  return pow(x.value, y.real());
+}
+
+template<class T>
+Units<std::complex<T> > pow(const Units<std::complex<T> >& x, const Units<std::complex<T> >& y) {
+  if (!y.dimensions.DimensionLess())
+    throw std::runtime_error("Applying pow to non-dimensionless exponent");
+  return pow(x, y.value);
+
+  // if (!y.dimensions.DimensionLess())
+  //   throw std::runtime_error("Applying pow to non-dimensionless exponent");
+  // if (!x.dimensions.DimensionLess() && y.value.imag() != 0)
+  //   throw std::runtime_error("Applying imaginary power to dimensional base");
+
+  // // if (representable(y.value.real()))
+  // Dimensions dim = x.dimensions;
+  // T charge = dim.charge * y.value.real();
+  // T mass = dim.mass * y.value.real();
+  // T time = dim.time * y.value.real();
+  // T length = dim.length * y.value.real();
+  // if (is_int(charge) && is_int(mass) && is_int(time) && is_int(length)) {
+  //   dim.charge = static_cast<Dimensions::value>(charge);
+  //   dim.mass = static_cast<Dimensions::value>(mass);
+  //   dim.time = static_cast<Dimensions::value>(time);
+  //   dim.length = static_cast<Dimensions::value>(length);
+  // } else {
+  //   throw std::runtime_error("Pow results in non-integer units.");
+  // }
+
+  // if (y.value.imag() == 0 && representable(y.value.real()))
+  //   return Units<std::complex<T> >(ipow(x.value, int(y.value.real())), dim);
+  // return Units<std::complex<T> >(std::pow(x.value, y.value), dim);
 }
 template<class T>
 Units<T> pow(const Units<T>& x, const Units<T>& y) {
@@ -134,89 +207,26 @@ Units<T> ceil(const Units<T>& val) {
   return Units<T>(std::ceil(val.value), val.dimensions);
 }
 
-template<class T>
-Units<T> exp(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying exp to non-dimensionless value");
-  return Units<T>(std::exp(val.value), val.dimensions);
+#define DIMENSIONLESS_STD_ADAPTER(fn)\
+template<class T>\
+Units<T> fn(const Units<T>& val) {\
+  if (!val.dimensions.DimensionLess())\
+    throw std::runtime_error("Applying " #fn " to non-dimensionless value");\
+  return Units<T>(std::fn(val.value), val.dimensions);\
 }
 
-template<class T>
-Units<T> log10(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying log10 to non-dimensionless value");
-  return Units<T>(std::log10(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> log(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying log to non-dimensionless value");
-  return Units<T>(std::log(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> cos(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying cos to non-dimensionless value");
-  return Units<T>(std::cos(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> sin(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying sin to non-dimensionless value");
-  return Units<T>(std::sin(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> tan(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying tan to non-dimensionless value");
-  return Units<T>(std::tan(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> atan(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying atan to non-dimensionless value");
-  return Units<T>(std::atan(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> acos(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying acos to non-dimensionless value");
-  return Units<T>(std::acos(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> asin(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying asin to non-dimensionless value");
-  return Units<T>(std::asin(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> tanh(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying tanh to non-dimensionless value");
-  return Units<T>(std::tanh(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> sinh(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying sinh to non-dimensionless value");
-  return Units<T>(std::sinh(val.value), val.dimensions);
-}
-
-template<class T>
-Units<T> cosh(const Units<T>& val) {
-  if (!val.dimensions.DimensionLess())
-    throw std::runtime_error("Applying cosh to non-dimensionless value");
-  return Units<T>(std::cosh(val.value), val.dimensions);
-}
+DIMENSIONLESS_STD_ADAPTER(exp);
+DIMENSIONLESS_STD_ADAPTER(log10);
+DIMENSIONLESS_STD_ADAPTER(log);
+DIMENSIONLESS_STD_ADAPTER(cos);
+DIMENSIONLESS_STD_ADAPTER(sin);
+DIMENSIONLESS_STD_ADAPTER(tan);
+DIMENSIONLESS_STD_ADAPTER(acos);
+DIMENSIONLESS_STD_ADAPTER(asin);
+DIMENSIONLESS_STD_ADAPTER(atan);
+DIMENSIONLESS_STD_ADAPTER(cosh);
+DIMENSIONLESS_STD_ADAPTER(sinh);
+DIMENSIONLESS_STD_ADAPTER(tanh);
 
 }  // std
 

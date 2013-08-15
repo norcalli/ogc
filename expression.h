@@ -1,7 +1,8 @@
 #ifndef EXPRESSION_H_
 #define EXPRESSION_H_
 
-#include <cstdio>
+// #include <cstdio>
+#include <iostream>
 #include <cmath>
 #include <complex>
 #include "operator.h"
@@ -18,13 +19,12 @@ struct DivideByZero : ExpressionException {
 
 template<class T>
 struct Expression {
-  // typedef double type;
-  // typedef std::complex<double> type;
   typedef T type;
 
   virtual ~Expression() {}
 
   virtual type Process() = 0;
+  virtual type Process(std::ostream&) = 0;
 
   // TODO: Experimental.
   virtual bool paren() const { return false; }
@@ -38,40 +38,29 @@ struct NumberExpr : Expression<T> {
   typedef typename Expression<T>::type type;
   NumberExpr(type val) : value(val) { }
 
-  type Process() {
-    // printf("%.15g", value);
-    std::cout << value;
+  type Process() { return value; }
+
+  type Process(std::ostream& stream) {
+    stream << value;
     return value;
   }
 
-  /*Expression::*/type value;
+  type value;
 };
-
-// template<class T>
-// struct NumberExpr : Expression<std::complex<T> > {
-//   typedef typename Expression<T>::type type;
-//   NumberExpr(type val) : value(val) { }
-
-//   type Process() {
-//     printf("%.15g", value);
-//     return value;
-//   }
-
-//   /*Expression::*/type value;
-// };
 
 template<class T>
 struct ConstantExpr : Expression<T> {
   typedef typename Expression<T>::type type;
-  // ConstantExpr(const char* nam, type val) : value(val), name(nam) {}
+
   ConstantExpr(const std::string& nam, type val) : value(val), name(nam) {}
 
-  type Process() {
-    printf("%s", name.c_str());
+  type Process() { return value; }
+
+  type Process(std::ostream& stream) {
+    stream << name;
     return value;
   }
 
-  // const char* name;
   std::string name;
   type value;
 };
@@ -80,103 +69,108 @@ template<class T>
 struct UnaryExpr : Expression<T> {
   typedef typename Expression<T>::type type;
 
-  virtual ~UnaryExpr() {
-    delete expr;
-  }
-  // TODO: Experimental.
-  UnaryExpr() : expr(NULL) {}
-  // UnaryExpr(Expression* e) : expr(e) {}
+  virtual ~UnaryExpr() { delete expr; }
+
   UnaryExpr(Expression<T>* e) : expr(e->mult()) {}
 
   Expression<T>* expr;
 };
 
-// struct Parenthesis : UnaryExpr {
-//   Parenthesis(Expression* val) : disable(false) {
-//     if (val->paren())
-//       reinterpret_cast<Parenthesis*>(val)->disable = true;
-//     expr = val;
-//   }
-//   type Process() {
-//     type value;
-//     if (disable)
-//       value = expr->Process();
-//     else {
-//       printf("(");
-//       value = expr->Process();
-//       printf(")");
-//     }
-//     return value;
-//     // return expr->Process();
-//   }
-//   bool paren() const { return true; }
-
-//   bool disable;
-// };
-
 template<class T>
 struct Parenthesis : UnaryExpr<T> {
   typedef typename Expression<T>::type type;
-  Parenthesis() {}
+
   Parenthesis(Expression<T>* val) : UnaryExpr<T>(val) {
-    if (this->expr->paren()) {
-      Parenthesis* p = reinterpret_cast<Parenthesis*>(this->expr);
-      this->expr = p->expr;
-    }
+    // if (this->expr->paren()) {
+    //   Parenthesis* p = reinterpret_cast<Parenthesis*>(this->expr);
+    //   this->expr = p->expr;
+    // }
   }
-  type Process() {
-    printf("(");
-    type value = this->expr->Process();
-    printf(")");
+  type Process() { return this->expr->Process(); }
+
+  type Process(std::ostream& stream) {
+    type value = this->expr->Process(stream << '(');
+    stream << ')';
     return value;
-    // return expr->Process();
   }
+
   bool paren() const { return true; }
 };
 
-template<class T>
-struct NegateExpr : UnaryExpr<T> {
-  typedef typename Expression<T>::type type;
-  NegateExpr(Expression<T>* val) : UnaryExpr<T>(val) { }
-  type Process() {
-    putchar('-');
-    // printf("(-");
-    type value = this->expr->Process();
-    // putchar(')');
-    return -value;
-    // return -expr->Process();
-  }
-};
-
-template<class T>
-struct PosExpr : UnaryExpr<T> {
-  typedef typename Expression<T>::type type;
-  type Process() {
-    return this->expr->Process();
-  }
-};
-
-// typedef Expression::type (*UnaryFunction)(Expression::type);
-// typedef Expression<T>::type (*UnaryFunction)(const Expression::type&);
-
+// #define UNARY_OPERATION_EXPRESSION(name, op)\
+// template<class T>\
+// struct name##Expr : UnaryExpr<T> {\
+//   typedef typename Expression<T>::type type;\
+//   name##Expr(Expression<T>* val) : UnaryExpr<T>(val) { }\
+//   type Process() {\
+//     return op this->expr->Process();\
+//   }\
+// \
+//   type Process(std::ostream& stream) {\
+//     return this->expr->Process(stream << '-');\
+//   }\
+// };
 template<class T>
 Expression<T>* WrapInParenthesis(Expression<T>* expr) {
   return expr->paren() ? expr : new Parenthesis<T>(expr);
 }
 
 template<class T>
+T WrapInParenthesis(T expr) {
+  return expr;
+}
+
+template<class T>
+struct NegateExpr : UnaryExpr<T> {
+  typedef typename Expression<T>::type type;
+  #ifdef DEBUG
+  NegateExpr(Expression<T>* val) : UnaryExpr<T>(WrapInParenthesis(val)) { }
+  #else
+  NegateExpr(Expression<T>* val) : UnaryExpr<T>(val) { }
+  #endif  // DEBUG
+
+  type Process() { return -this->expr->Process(); }
+
+  type Process(std::ostream& stream) {
+    return -this->expr->Process(stream << '-');
+  }
+};
+
+template<class T>
+struct PosExpr : UnaryExpr<T> {
+  typedef typename Expression<T>::type type;
+
+  type Process() { return this->expr->Process(); }
+
+  type Process(std::ostream& stream) {
+    return this->expr->Process(stream << '+');
+  }
+};
+
+// typedef Expression::type (*UnaryFunction)(Expression::type);
+// typedef Expression<T>::type (*UnaryFunction)(const Expression::type&);
+
+
+template<class T>
 struct FuncExpr : UnaryExpr<T> {
   typedef typename Expression<T>::type type;
   typedef type (*UnaryFunction)(const type&);
 
-  // FuncExpr(const char* name, UnaryFunction function, Expression<T>* e) : name_(name), function_(function) { expr = e; }
-  FuncExpr(const char* name, UnaryFunction function, Expression<T>* e) : name_(name), function_(function) { this->expr = WrapInParenthesis(e); }
-  // UnaryExpr* operator()(Expression<T>* e) { expr = e; return this; }
-  UnaryExpr<T>* operator()(Expression<T>* e) { this->expr = WrapInParenthesis(e); return this; }
+  FuncExpr(const char* name, UnaryFunction function, Expression<T>* e)
+  : name_(name), function_(function), UnaryExpr<T>(e) {
+    #ifdef DEBUG
+   this->expr = WrapInParenthesis(e);
+   #endif  // DEBUG
+  }
+
+  // UnaryExpr<T>* operator()(Expression<T>* e) {
+  //   this->expr = WrapInParenthesis(e); return this;
+  // }
   type Process() {
-    printf("%s", name_);
     return function_(this->expr->Process());
-    // return function_(new Parenthesis(expr->Process());
+  }
+  type Process(std::ostream& stream) {
+    return function_(this->expr->Process(stream << name_));
   }
  private:
   UnaryFunction function_;
@@ -189,10 +183,12 @@ struct BinaryExpr : Expression<T> {
     delete left;
     delete right;
   }
-  // TODO: Experimental
-  BinaryExpr() : left(NULL), right(NULL) {}
-  // BinaryExpr(Expression<T>* l, Expression<T>* r) : left(l), right(r) { }
-  BinaryExpr(Expression<T>* l, Expression<T>* r) : left(l->mult()), right(r->mult()) { }
+  BinaryExpr(Expression<T>* l, Expression<T>* r)
+  #ifdef DEBUG
+   : left(WrapInParenthesis(l)), right(WrapInParenthesis(r)) { }
+  #else
+   : left(l->mult()), right(r->mult()) { }
+  #endif  // DEBUG
 
   Expression<T>* left, *right;
 };
@@ -203,113 +199,50 @@ struct PowExpr : BinaryExpr<T> {
   PowExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}
 
   type Process() {
-    // printf("(");
-    type lval = this->left->Process();
-    printf(" ^ ");
-    type rval = this->right->Process();
-    // printf(")");
-    return pow(lval, rval);
+    return pow(this->left->Process(), this->right->Process());
   }
-};
-
-template<class T>
-struct MinusExpr : BinaryExpr<T> {
-  typedef typename Expression<T>::type type;
-  MinusExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}
-
-  type Process() {
-    type lval = this->left->Process();
-    printf(" - ");
-    type rval = this->right->Process();
-    return lval - rval;
-    // return left->Process() - right->Process();
-  }
-};
-
-template<class T>
-struct PlusExpr : BinaryExpr<T> {
-  typedef typename Expression<T>::type type;
-  PlusExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}
-
-  type Process() {
-    type lval = this->left->Process();
-    printf(" + ");
-    type rval = this->right->Process();
-    return lval + rval;
-    // return left->Process() + right->Process();
-  }
-};
-
-template<class T>
-struct MultExpr : BinaryExpr<T> {
-  typedef typename Expression<T>::type type;
-
-  // MultExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr(l, r) {}
-  MultExpr(Expression<T>* l, Expression<T>* r) {
-    this->left = l;
-    this->right = r;
-  }
-
-  type Process() {
-    // printf("(");
-    type lval = this->left->Process();
-    printf(" * ");
-    type rval = this->right->Process();
-    // printf(")");
-    return lval * rval;
-    // return left->Process() * right->Process();
-  }
-  // bool mult() const { return true; }
-  // Expression<T>* mult() { return this; }
-  Expression<T>* mult() {
-    return this;
-    //return WrapInParenthesis(this);
-    // Parenthesis<T>* result = new Parenthesis<T>;
-    // result->expr = this;
-    // return result;
-//    return new Parenthesis<T>(this);
-  }
-};
-
-template<class T>
-struct DivExpr : BinaryExpr<T> {
-  // typedef typename Expression<T>::type type;
-  typedef T type;
-  DivExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}
-
-  type Process() {
-    // printf("(");
-    type lval = this->left->Process();
-    printf(" / ");
-    type rval = this->right->Process();
-    // printf(")");
-    // if (rval == static_cast<type>(0))
-    if (rval == 0)
-    // if (rval == type())
-      throw DivideByZero();
-    // return left->Process() / rval;
-    return lval / rval;
+  type Process(std::ostream& stream) {
+    type left = this->left->Process(stream);
+    return pow(left,
+               this->right->Process(stream << " ^ "));
   }
 };
 
 template<class T>
 struct ModuloExpr : BinaryExpr<T> {
-  // typedef typename Expression<T>::type type;
-  typedef T type;
+  typedef typename Expression<T>::type type;
   ModuloExpr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}
 
   type Process() {
-    // printf("(");
-    type lval = this->left->Process();
-    printf(" %% ");
-    type rval = this->right->Process();
-    // printf(")");
-    if (rval == static_cast<type>(0))
-      throw DivideByZero();
-    // return left->Process() / rval;
-    return modulo(lval, rval);
+    return modulo(this->left->Process(), this->right->Process());
+  }
+  type Process(std::ostream& stream) {
+    type left = this->left->Process(stream);
+    return modulo(left,
+                  this->right->Process(stream << " % "));
   }
 };
+
+#define BINARY_OPERATION_EXPRESSION(name, op)\
+template<class T>\
+struct name##Expr : BinaryExpr<T> {\
+  typedef typename Expression<T>::type type;\
+  name##Expr(Expression<T>* l, Expression<T>* r) : BinaryExpr<T>(l, r) {}\
+  \
+  type Process() {\
+    return this->left->Process() op this->right->Process();\
+  }\
+  type Process(std::ostream& stream) {\
+    type left = this->left->Process(stream);\
+    return left op this->right->Process(stream << " " #op " ");\
+  }\
+};
+
+BINARY_OPERATION_EXPRESSION(Minus, -);
+BINARY_OPERATION_EXPRESSION(Plus, +);
+BINARY_OPERATION_EXPRESSION(Mult, *);
+BINARY_OPERATION_EXPRESSION(Div, /);
+
 
 template<class T>
 struct Operations<Expression<T>*> {
@@ -398,6 +331,9 @@ struct Operations<Expression<Units<T> >*> {
   inline static type negate(type a) { return new NegateExpr<base>(a); }
   inline static type modulo(type a, type b) { return new ModuloExpr<base>(a, b); }
   inline static type pow(type a, type b) { return new PowExpr<base>(a, b); }
+
+  inline static type floor(type a) { return new FuncExpr<base>("floor", Operations<base>::floor, a); }
+  inline static type ceil(type a) { return new FuncExpr<base>("ceil", Operations<base>::ceil, a); }
 
   inline static type sin(type a) { return new FuncExpr<base>("sin", Operations<base>::sin, a); }
   inline static type cos(type a) { return new FuncExpr<base>("cos", Operations<base>::cos, a); }

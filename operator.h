@@ -38,7 +38,7 @@ inline double modulo<double>(const double& a, const double& b) {
 struct Operator {
   Operator(const char* d, blind_ptr f, size_t a, int p, bool i, bool l)
       : name(d), function(f), argument_count(a),
-        precedence(p), is_operator(i), left_assoc(l) {}
+  precedence(p), is_operator(i), left_assoc(l) {}
 
   Operator() = default;
   // Operator()
@@ -58,12 +58,12 @@ struct Operations {
   using type        = T;
   using arg_type    = const T&;
   // using arg_type    = T;
-  // using Unary       = T(arg_type);
-  // using Binary      = T(arg_type, arg_type);
-  // using Nary        = T(const std::vector<T>&);
-  using Unary       = std::function<T(arg_type)>;
-  using Binary      = std::function<T(arg_type, arg_type)>;
-  using Nary        = std::function<T(const std::vector<T>&)>;
+  using Unary       = T(arg_type);
+  using Binary      = T(arg_type, arg_type);
+  using Nary        = T(const std::vector<T>&);
+  // using Unary       = std::function<T(arg_type)>;
+  // using Binary      = std::function<T(arg_type, arg_type)>;
+  // using Nary        = std::function<T(const std::vector<T>&)>;
   // using Unary  = T (*)(arg_type);
   // using Binary = T (*)(arg_type, arg_type);
   // using Nary   = T (*)(const std::vector<T>&);
@@ -74,7 +74,7 @@ struct Operations {
   // typedef T (*Nary)(const std::vector<T>&);
 
   inline static T floor(arg_type a) { return std::floor(a); }
-  inline static T ceil(arg_type a) { return std::floor(a); }
+  inline static T ceil(arg_type a) { return std::ceil(a); }
   inline static T negate(arg_type a) { return -a; }
   inline static T plus(arg_type a, arg_type b) { return a + b; }
   inline static T minus(arg_type a, arg_type b) { return a - b; }

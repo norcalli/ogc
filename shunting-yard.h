@@ -46,13 +46,14 @@ struct UnknownAlpha : ParseException {
 
 template <class Symbol, class Result = Symbol,
           class SymbolMap = StreamMap<std::string, Symbol>,
-          class FunctionMap = StreamMap<std::string, Operator>>
+          // class FunctionMap = StreamMap<std::string, Operator>>
+          class FunctionMap = std::map<std::string, const Operator, StreamCompare>>
 class ShuntingYard {
  public:
   typedef Symbol symbol_type;
   typedef Result result_type;
   typedef ReversePolish<Symbol, Result> calculator_type;
-  typedef std::stack<Operator*> operator_stack;
+  typedef std::stack<const Operator*> operator_stack;
   typedef FunctionMap function_map;
   typedef SymbolMap symbol_map;
   // TODO: I can choose whether or not I want case handled here. I should be
@@ -91,14 +92,18 @@ class ShuntingYard {
     fprintf(stderr, "State:\t\t\tOperators.Top(");
     if (!operators_.empty()) fprintf(stderr, "%s", operators_.top()->name);
     fprintf(stderr, ");\tCalculator.Top(");
+//#ifdef EXPRESSION
+//    if (!calculator_.empty()) std::cerr << calculator_.top()->Process();
+//#else
     if (!calculator_.empty()) std::cerr << calculator_.top();
+//#endif
     fputs(")\n", stderr);
   }
 
  private:
   void CloseParenthesis();
   void FunctionArgumentSeparator();
-  void ProcessOperator(Operator* operation);
+  void ProcessOperator(const Operator* operation);
   void PopOperator();
 
   // TODO: Should it maintain a copy?

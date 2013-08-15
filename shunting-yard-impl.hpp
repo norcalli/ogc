@@ -110,6 +110,17 @@ void ShuntingYard<Symbol, Result, SymbolMap, FunctionMap>::CloseParenthesis() {
   operators_.pop();
   // TODO: Experimental.
   calculator_.HandleOperator(&functions_->at("("));
+  if (operators_.empty())
+    return;
+  int c = *operators_.top()->name;
+  // if (c == '_')
+  //   c = kNeg;
+
+  // TODO: Is this the best way? We don't want kNeg, but we do want all other
+  // functions.
+  if (IsFunction(c))
+    PopOperator();
+  return;
   // calculator_.HandleParenthesis();
 
   // if (!operators_.empty() && IsFunction(operators_.top())) {
@@ -128,6 +139,7 @@ template <class Symbol, class Result, class SymbolMap, class FunctionMap>
 inline void
 ShuntingYard<Symbol, Result, SymbolMap, FunctionMap>::PopOperator() {
   calculator_.HandleOperator(operators_.top());
+//  calculator_.HandleOperator(WrapInParenthesis(operators_.top()));
   operators_.pop();
 }
 
@@ -147,14 +159,16 @@ void ShuntingYard<Symbol, Result, SymbolMap,
 template <class Symbol, class Result, class SymbolMap, class FunctionMap>
 // void ShuntingYard<T>::ProcessOperator(int operation) {
     void ShuntingYard<Symbol, Result, SymbolMap, FunctionMap>::ProcessOperator(
-        Operator* operation) {
+        const Operator* operation) {
   // template<class T, class RPNHandler>
   // void ShuntingYard<T, RPNHandler>::ProcessOperator(int operation) {
 
   int precedence = operation->precedence - operation->left_assoc;
+  // int precedence = operation->precedence;
   dprintf("ProcessOperator:\tOperator(%s);\t\tPrecedence(%d)\n",
           operation->name, precedence);
   while (!operators_.empty() && precedence < operators_.top()->precedence) {
+  // while (!operators_.empty() && ((operation->left_assoc && precedence == operators_.top()->precedence) || precedence < operators_.top()->precedence )) {
     dprintf("ProcessOperatorLoop:\tOperator(%s vs %s);\tPrecedence(%d vs %d)\n",
             operation->name, operators_.top()->name, precedence,
             operators_.top()->precedence);
@@ -171,20 +185,50 @@ class State {
   State() {
     negate_ = true;
     impl_mult_ = false;
+    previous = kNothing;
   }
   inline bool Negate() const { return negate_; }
   inline bool ImplicitMultiplication() const { return impl_mult_; }
   void SetToken(Token token) {
+    previous = token;
     negate_ = token & (kLeftParenthesis | kOperator);
     // impl_mult_ = token & kValue;
     impl_mult_ = token & (kValue | kRightParenthesis);
   }
 
+  Token previous;
  private:
   bool negate_;
   bool impl_mult_;
-  // Token previous_;
 };
+
+template<class Map, class Key>
+typename Map::const_iterator MapFind(const Map& map, const Key& stream) {
+  typedef typename Map::const_iterator Iterator;
+  std::pair<Iterator, Iterator> pair = map.equal_range(stream);
+  // if (pair.first != this->end() && pair.first == pair.second)
+  //   if (Compare::Equal(pair.first->first, stream))
+  //     return pair.first;
+  // for (Iterator idx = pair.first, end = pair.second; idx != end; ++idx)
+  //   if (Compare::Equal(idx->first, stream))
+  //     return idx;
+  Iterator& idx = pair.first, &end = pair.second;
+  if (idx == map.end())
+    return idx;
+  do {
+    // printf("dicks: %s\n", idx->first);
+    if (Map::key_compare::Equal(idx->first, stream))
+      return idx;
+    // if (Compare::Equal(idx->first, stream)) {
+    //   printf("boobs: %s\n", idx->first);
+    //   return idx;
+    // }
+    
+    // Will probably result in infinite loop if `idx` == `end`.
+    // } while (idx != end || ++idx != idx);
+  } while (idx++ != end);
+  return map.end();
+}
 
 template <class Symbol, class Result, class SymbolMap, class FunctionMap>
 Result
@@ -222,12 +266,17 @@ ShuntingYard<Symbol, Result, SymbolMap, FunctionMap>::Parse(Iterator& str,
         // enable implicit multiplication.
       } break;
       case kAlpha: {
+        if (state.previous & (kAlpha) && *(str - 1) != ' ')
+        // if (state.previous == kConstant && *(str - 1) != ' ')
+          throw std::runtime_error("Invalid syntax, space required between alphanumeric symbols.");
         {
           // std::map<const char*, int>::iterator idx =
           //     UnGreedyFind(functions_, str, string::StreamCompare);
 
           // StreamMap<const char*, int>::iterator idx = functions_->Find(str);
-          typename function_map::iterator idx = functions_->Find(str);
+          // typename function_map::iterator idx = functions_->Find(str);
+          // typename function_map::iterator idx = functions_->find(str);
+          typename function_map::const_iterator idx = MapFind(*functions_, str);
           if (idx != functions_->end()) {
             dprintf("Function(%s)", idx->first.c_str());
             if (!idx->second.is_operator && state.ImplicitMultiplication()) {
@@ -248,7 +297,9 @@ ShuntingYard<Symbol, Result, SymbolMap, FunctionMap>::Parse(Iterator& str,
           //     UnGreedyFind(symbols_, str, string::StreamCaseCompare);
           // StreamMap<const char*, base_type, StreamCaseCompare>::iterator idx
           // = symbols_->Find(str);
-          typename symbol_map::iterator idx = symbols_->Find(str);
+          // typename symbol_map::iterator idx = symbols_->Find(str);
+          // typename symbol_map::iterator idx = symbols_->find(str);
+          typename symbol_map::const_iterator idx = MapFind(*symbols_, str);
           if (idx != symbols_->end()) {
             // dprintf("Constant(%s=%.15g)", idx->first, idx->second);
             dexec(std::cout << "Constant(" << idx->first << "=" << idx->second

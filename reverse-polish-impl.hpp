@@ -22,7 +22,7 @@ Result ReversePolish<Symbol, Result>::PopValue() {
 }
 
 template <class Symbol, class Result>
-void ReversePolish<Symbol, Result>::HandleOperator(Operator* operation) {
+void ReversePolish<Symbol, Result>::HandleOperator(const Operator* operation) {
   const Operator& op = *operation;
   dprintf("CallOperator: name: %s\n", op.name);
   if (op.function.as<void>() == NULL) return;
@@ -31,20 +31,20 @@ void ReversePolish<Symbol, Result>::HandleOperator(Operator* operation) {
     return;
   }
   if (op.argument_count == 1) {
-    typename Operations<result_type>::Unary unary = op.function;
-    // typename Operations<result_type>::Unary* unary = op.function;
+    // typename Operations<result_type>::Unary unary = op.function;
+    typename Operations<result_type>::Unary* unary = op.function;
     PushValue(unary(PopValue()));
     return;
   }
   if (op.argument_count == 2) {
-    typename Operations<result_type>::Binary binary = op.function;
-    // typename Operations<result_type>::Binary* binary = op.function;
+    // typename Operations<result_type>::Binary binary = op.function;
+    typename Operations<result_type>::Binary* binary = op.function;
     result_type right = PopValue(), left = PopValue();
     PushValue(binary(left, right));
     return;
   }
-  typename Operations<result_type>::Nary nary = op.function;
-  // typename Operations<result_type>::Nary* nary = op.function;
+  // typename Operations<result_type>::Nary nary = op.function;
+  typename Operations<result_type>::Nary* nary = op.function;
   // TODO: Todo, should this be result_type*?
   std::vector<result_type> arguments(op.argument_count);
   for (long i = arguments.size() - 1; i >= 0; --i) {
